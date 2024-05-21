@@ -1,15 +1,12 @@
-import {Autocomplete, TextField} from "@mui/material";
+import { Autocomplete, TextField } from "@mui/material";
 import DeclaredComponent from "../../../Tools/DeclaredComponent";
-const {serializeSession, declareState} = require("../../../Tools/Toolbox");
-
-
+const { serializeSession, declareState } = require("../../../Tools/Toolbox");
 
 class CourseSearch extends DeclaredComponent {
 
     constructor(props) {
         super(props);
-        this.state = {session: null, courses: null, value: null, showCourses: false};
-
+        this.state = { session: null, courses: null, value: null, showCourses: false };
     }
 
     onDeclareState(stateChange, keys) {
@@ -19,18 +16,17 @@ class CourseSearch extends DeclaredComponent {
         if (!keys.includes("session")) return;
 
         // Update session
-        stateChange = {session: serializeSession(stateChange.session)};
+        stateChange = { session: serializeSession(stateChange.session.replace(/\//g, '-').replace(/ /g, '-')) };
         this.setState(stateChange);
 
         // If session is valid
         if (stateChange.session && stateChange.session !== this.state.session) {
             fetch(`https://yorkapi.isaackogan.com/v1/courses/info/${stateChange.session}/codes`).then(res => res.json()).then(array => {
-                this.setState({courses: array || []});
+                this.setState({ courses: array || [] });
             });
         }
 
         this.clearValue();
-
     }
 
     searchParamParse(stateChange, _) {
@@ -42,14 +38,13 @@ class CourseSearch extends DeclaredComponent {
             this.handleChange(null, upper);
 
             stateChange.querySearch.from = "CourseSearch";
-            declareState({"querySearch": stateChange.querySearch});
+            declareState({ "querySearch": stateChange.querySearch });
         })
-
     }
 
     clearValue() {
-        this.setState({value: null});
-        declareState({course: null});
+        this.setState({ value: null });
+        declareState({ course: null });
     }
 
     handleInputChange(event, value) {
@@ -59,37 +54,34 @@ class CourseSearch extends DeclaredComponent {
 
         // Close until more typed
         if (value.length < 4) {
-            return this.setState({showCourses: false});
+            return this.setState({ showCourses: false });
         }
 
         // Open when more typed
         if (!this.state.showCourses) {
-            this.setState({showCourses: true})
+            this.setState({ showCourses: true })
         }
-
     }
 
     handleChange(event, change) {
-        this.setState({value: change});
+        this.setState({ value: change });
 
         // When the course changes, get the new course schedule
         if (change) {
             fetch(`https://yorkapi.isaackogan.com/v1/courses/info/${this.state.session}/${change}/schedule`).then(res => res.json()).then(json => {
-                declareState({sections: json.sections});
+                declareState({ sections: json.sections });
             });
         } else {
-            declareState({sections: null});
+            declareState({ sections: null });
         }
 
-        declareState({course: change});
-
+        declareState({ course: change });
     }
 
     render() {
-
+        //Modified to add support for different course code formatting
         return (
             <div style={this.props.style}>
-
                 <Autocomplete
                     disablePortal
                     id="course-search-input"
@@ -101,13 +93,11 @@ class CourseSearch extends DeclaredComponent {
                     onInputChange={this.handleInputChange.bind(this)}
                     onChange={this.handleChange.bind(this)}
                     renderInput={(params) => <TextField {...params} label="Course Code" />}
-                    onClose={() => this.setState({showCourses: false})}
+                    onClose={() => this.setState({ showCourses: false })}
                 />
             </div>
-
         )
     }
-
 }
 
 export default CourseSearch;
